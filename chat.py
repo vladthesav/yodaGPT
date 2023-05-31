@@ -20,6 +20,7 @@ class Yoda():
         #append input to messages
         self.convo.append({"role":"user", "content":question})
 
+        #send API request to openAI
         chat = openai.ChatCompletion.create(
             model=self.model,
             messages=self.convo

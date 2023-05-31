@@ -22,15 +22,10 @@ with st.sidebar:
     add_vertical_space(5)
     st.write('Made with ❤️ by [vladthesav](<https://github.com/vladthesav>)')
 
-
-if 'generated' not in st.session_state:
-    st.session_state['generated'] = ["Greetings, young one. How may I be of assistance to you today?"]
-
-if 'past' not in st.session_state:
-    st.session_state['past'] = ["Greetings master yoda"]
+#init Yoda object to track convo and make API requests
+if 'yoda' not in st.session_state: st.session_state['yoda'] = Yoda()
 
 
-#input_container = st.container()
 colored_header(label='', description='', color_name='blue-30')
 response_container = st.container()
 input_container = st.container()
@@ -47,19 +42,25 @@ with input_container: user_input = get_text()
 
 # Response output
 ## Function for taking user prompt as input followed by producing AI generated responses
-yoda = Yoda()
 def generate_response(prompt):
-    response = yoda.ask_yoda(prompt)
+    response = st.session_state['yoda'].ask_yoda(prompt)
     return response
 
 ## Conditional display of AI generated responses as a function of user provided prompts
 with response_container:
-    if user_input:
+    if user_input:  
+
+        #ask the wise one
         response = generate_response(user_input)
-        st.session_state.past.append(user_input)
-        st.session_state.generated.append(response)
+
+        if not st.session_state["yoda"]: pass
+
+        convo = st.session_state["yoda"].convo
+        for i, m in enumerate(convo): 
+
+            #first item in convo is context for bot - ignore it
+            if i==0: continue 
+
+            is_user = m["role"]=="user"
+            message(m["content"], key=str(i), is_user=is_user)
         
-    if st.session_state['generated']:
-        for i in range(len(st.session_state['generated'])):
-            message(st.session_state['past'][i], is_user=True, key=str(i) + '_user')
-            message(st.session_state['generated'][i], key=str(i))
