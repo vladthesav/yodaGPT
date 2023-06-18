@@ -20,12 +20,12 @@ To run YodaGPT locally, follow the steps below:
 
 3. Run the application:
    ```bash
-   streamlit run app.py
+   python3 run app.py
    ```
 
 4. Connect to YodaGPT by opening your web browser and navigating to:
    ```
-   http://localhost:8501/
+   http://localhost:3500/
    ```
 
 ### Running with Docker
@@ -39,10 +39,10 @@ To run YodaGPT using Docker, follow the steps below:
 
 2. Run the Docker container with your API key as an environment variable:
    ```bash
-   docker run -d -p 8501:8501 --env OPENAI_API_KEY="YOUR_API_KEY" yoda_gpt:latest
+   docker run -d -p 3500:3500 --env OPENAI_API_KEY="YOUR_API_KEY" yoda_gpt:latest
    ```
 
 3. Connect to YodaGPT by opening your web browser and navigating to:
    ```
-   http://localhost:8501/
+   http://localhost:3500/
    ```
