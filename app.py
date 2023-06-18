@@ -1,39 +1,45 @@
-from flask import Flask, jsonify,request, render_template
+from flask import Flask, request, render_template, abort
 from sessions import SessionManager 
-
-import openai
 import os
 
-#keep track of chat sessions
+# Initialize SessionManager and start cleanup thread
 sessions = SessionManager().start()
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
+    """
+    Render the home page.
+    """
     return render_template("index.html")
 
 @app.route('/respond')
 def respond():
-    # get response from ChatGPT
+    """
+    Handle a GET request to respond to a user message.
 
-    #get session ID
-    if "session_id" not in request.args: return "error: no session id found"
-    session_id = request.args.get("session_id")
-    #print("session_id= ",session_id)
+    Request should contain "session_id" and "message" as query parameters.
+    """
+    # Ensure the request contains necessary data
+    session_id = request.args.get('session_id')
+    message = request.args.get('message')
 
-    #get message 
-    if "message" not in request.args: return "error: no message found"
-    message = request.args.get("message")
+    if session_id is None: abort(400, description="Missing parameter: 'session_id'")
+    if message is None: abort(400, description="Missing parameter: 'message'")
 
-    #ask yoda
+    # Get a response from Yoda and return it
     response = sessions.chat(session_id, message)
 
-    return  response
+    return response
 
 @app.route("/make_session")
 def make_session():
-    #create chat session and return session id to keep track of it
+    """
+    Handle a GET request to create a new chat session.
+
+    Returns the ID of the new session.
+    """
     session_id = sessions.start_session() 
 
     return session_id

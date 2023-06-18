@@ -7,88 +7,114 @@ import time
 
 
 def random_string(n=12):
-    #create random string to use as session id
-    return ''.join(random.choices(string.ascii_lowercase +string.digits, k=n))
+    """
+    Generate a random string of a given length.
+
+    Args:
+        n (int): The desired length of the string.
+
+    Returns:
+        str: A random alphanumeric string.
+    """
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=n))
+
 
 class SessionManager():
-    """very crude session manager"""
+    """
+    A class to manage multiple chat sessions with the Yoda chatbot.
+    """
     def __init__(self, timeout=3000):
+        """
+        Initialize the SessionManager.
 
-        #keep track of sessions
-        self.sessions = {}
-
-        #ger rid of stale sessions
-        self.timeout = timeout
-
-        self.stopped=False
+        Args:
+            timeout (int): The time in seconds after which a session is considered stale and removed.
+        """
+        self.sessions = {}  # A dict to store all active sessions
+        self.timeout = timeout  # The timeout to consider a session as stale
+        self.stopped = False  # A flag to indicate whether the session manager should stop
 
     def start(self):
-        Thread(target=self.cleanup, args=()).start()
+        """
+        Start the session manager.
+        """
+        Thread(target=self.cleanup).start()
         return self
 
     def cleanup(self):
-        #get rid of sessions that timed out
+        """
+        Periodically remove sessions that are stale (i.e., haven't been interacted with in a while).
+        """
         while not self.stopped:
-            
-            #look at every session and see when the user last interacted with it
             current_time = time.time()
 
+            # Check all sessions for staleness
             for chat_id in list(self.sessions.keys()): 
+                last_interacted_with = current_time - self.sessions[chat_id]["last_interacted_with"]
 
-                #see when they last interacted with it
-                last_heard_from = current_time - self.sessions[chat_id]["last_interacted_with"]
-
-                if last_heard_from < self.timeout: continue 
-
-                #remove stale sessions 
-                self.end_session(chat_id)
-
+                # If the session is stale, remove it
+                if last_interacted_with > self.timeout:
+                    self.end_session(chat_id)
 
     def start_session(self):
-        #start a chat session 
+        """
+        Start a new chat session with Yoda.
 
-        #create a unique key for session
+        Returns:
+            str: The ID of the new session.
+        """
         key = random_string()
 
-        #if this key is already in use, find another one that isn't 
-        while key in self.sessions: key = random_string()
+        # Ensure the session ID is unique
+        while key in self.sessions:
+            key = random_string()
 
-        #create new session
-        self.sessions[key] = {"chat":Yoda(), "last_interacted_with": time.time()}
-        
-        #return session id 
+        # Create the new session
+        self.sessions[key] = {"chat": Yoda(), "last_interacted_with": time.time()}
+
         return key
 
-
     def chat(self, chat_id, prompt):
-        #send API request to chatgpt
+        """
+        Ask a question to Yoda in a particular chat session.
+
+        Args:
+            chat_id (str): The ID of the chat session.
+            prompt (str): The question to ask Yoda.
+
+        Returns:
+            str: Yoda's answer, or an empty string if the session ID was not found.
+        """
         if chat_id not in self.sessions: 
-            print("error: session {} not found".format(chat_id))
+            print(f"Error: session {chat_id} not found.")
             return ""
 
         #get chat session
         session = self.sessions[chat_id]
-        print(session)
-        #ask the wise one
-        response = session["chat"].ask_yoda( prompt)
 
-        #update last time user did anything
-        session["last_interacted_with"]=time.time()
+        #get API response
+        response = session["chat"].ask_yoda(prompt)
+
+        # Update the session to reflect that it's just been interacted with
+        session["last_interacted_with"] = time.time()
 
         return response
 
-
     def end_session(self, chat_id):
-        #kill session 
+        """
+        End a specific chat session.
 
-        #if session doesn't exist, stop here
+        Args:
+            chat_id (str): The ID of the session to end.
+        """
+        # Ignore invalid session IDs
         if chat_id not in self.sessions: return
 
-        #delete session data from table 
+        #delete session
         del self.sessions[chat_id]
 
-        return
-
-
     def stop(self):
+        """
+        Stop the session manager.
+        """
         self.stopped = True
