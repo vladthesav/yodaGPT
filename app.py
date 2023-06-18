@@ -1,66 +1,56 @@
-import streamlit as st
-from streamlit_chat import message
-from streamlit_extras.colored_header import colored_header
-from streamlit_extras.add_vertical_space import add_vertical_space
+from flask import Flask, request, render_template, abort
+from sessions import SessionManager 
+import os
 
-from chat import *
+# Initialize SessionManager and start cleanup thread
+sessions = SessionManager().start()
 
+app = Flask(__name__)
 
-st.set_page_config(page_title="yodaGPT - A chatGPT-powered yoda bot")
+@app.route('/')
+def index():
+    """
+    Render the home page.
+    """
+    return render_template("index.html")
 
+@app.route('/respond')
+def respond():
+    """
+    Handle a GET request to respond to a user message.
 
-with st.sidebar:
-    st.title('yodaGPT')
-    st.markdown('''
-    ## About
-    This app is an chatGPT-powered yoda chatbot built using:
-    - [Streamlit](<https://streamlit.io/>)
-    - [OpenAI](<https://platform.openai.com/docs/introduction/overview>)
-    
-    💡 Note: OpenAI API key required
-    ''')
-    add_vertical_space(5)
-    st.write('Made with ❤️ by [vladthesav](<https://github.com/vladthesav>)')
+    Request should contain "session_id" and "message" as query parameters.
+    """
+    # Ensure the request contains necessary data
+    session_id = request.args.get('session_id')
+    message = request.args.get('message')
 
-#init Yoda object to track convo and make API requests
-if 'yoda' not in st.session_state: st.session_state['yoda'] = Yoda()
+    if session_id is None: abort(400, description="Missing parameter: 'session_id'")
+    if message is None: abort(400, description="Missing parameter: 'message'")
 
+    # Get a response from Yoda and return it
+    response = sessions.chat(session_id, message)
 
-colored_header(label='', description='', color_name='blue-30')
-response_container = st.container()
-input_container = st.container()
-
-# User input
-## Function for taking user provided prompt as input
-def get_text():
-    input_text = st.text_input("You: ", "", key="input")
-    return input_text
-
-## Applying the user input box
-with input_container: user_input = get_text()
-
-
-# Response output
-## Function for taking user prompt as input followed by producing AI generated responses
-def generate_response(prompt):
-    response = st.session_state['yoda'].ask_yoda(prompt)
     return response
 
-## Conditional display of AI generated responses as a function of user provided prompts
-with response_container:
-    if user_input:  
+@app.route("/make_session")
+def make_session():
+    """
+    Handle a GET request to create a new chat session.
 
-        #ask the wise one
-        response = generate_response(user_input)
+    Returns the ID of the new session.
+    """
+    session_id = sessions.start_session() 
 
-        if not st.session_state["yoda"]: pass
+    return session_id
 
-        convo = st.session_state["yoda"].convo
-        for i, m in enumerate(convo): 
+if __name__ == '__main__':
 
-            #first item in convo is context for bot - ignore it
-            if i==0: continue 
+    #get configs from environment vars 
+    env_vars = os.environ 
 
-            is_user = m["role"]=="user"
-            message(m["content"], key=str(i), is_user=is_user)
-        
+    #don't run in debug mode if running in container - we set this env variable when building it
+    debug = False if "container" in env_vars else True
+    print("debug mode = ",debug)
+
+    app.run(debug=debug, port=3500,host='0.0.0.0')

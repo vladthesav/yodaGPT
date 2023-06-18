@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+    <title>YodaGPT</title>
+
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 34px;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #3b77d9;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 400px;
+            height: 500px;
+            border: 1px solid #ccc;
+            overflow: auto;
+            padding: 10px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 20px;
+            clear: both;
+            display: inline-block;
+            max-width: 80%;
+        }
+        .message.sender {
+            background-color: #d7eaf9;
+            float: right;
+            margin-left: 20px;
+        }
+        .message.receiver {
+            background-color: #f2f2f2;
+            float: left;
+            margin-right: 20px;
+        }
+
+        .sender-name {
+            font-weight: bold;
+        }
+
+        .message-text {
+            margin-top: 5px;
+            word-wrap: break-word;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .input-container input {
+            width: 80%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            flex-grow: 1;
+            flex-direction: column;
+        }
+
+        .input-container textarea {
+            width: 80%;
+            padding-left: 8px;
+            padding-right: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            flex-grow: 1;
+            flex-direction: column;
+            overflow: auto;
+        }
+
+        .input-container button {
+            padding: 8px 15px;
+            background-color: #3b77d9;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+
+
+        /* Styling for the scrollbar */
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+
+            background: #3b77d9;
+            border-radius: 10px;
+
+        }
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background: #3b77d9;
+        }
+
+    </style>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+
+        function start_chat_session(){
+
+            //start chat session and get session id 
+            session_id = null; 
+
+            $.ajax({
+                  type: 'GET',
+                  url: '/make_session',
+                  processData: false,
+                  async: false, 
+                  success: function (result) {
+                                            //if api call fails, log error to console and stop here
+                                            if (result.isOk == false) {
+                                            console.log("api error: ",result.message);
+                                            return; 
+                                            };
+
+                                            //otherwise set output to result
+                                            session_id =  result;
+                                            }
+              });
+
+              return session_id;
+        }
+
+
+
+        //start chat session and get session id 
+        session_id = start_chat_session()
+        console.log("chat id = "+session_id);
+
+        function api_request(message){
+
+            //send chat history to API and get ChatGPT response back
+            prediction = null;
+
+            //send data to cat breed prediction api
+            $.ajax({
+                  type: 'GET',
+                  url: '/respond?session_id='+session_id+'&message='+message,
+                  processData: false,
+                  contentType: 'application/json',
+                  async: false, 
+                  success: function (result) {
+                                            //if api call fails, log error to console and stop here
+                                            if (result.isOk == false) {
+                                              console.log("api error: ",result.message);
+                                              return; 
+                                            };
+
+                                            //otherwise set output to result
+                                            prediction =  result;
+
+                                            //replace newlines with breaks
+                                            prediction = prediction.replace(/(?:\r\n|\r|\n)/g, '<br>');
+
+                                            }
+              });
+
+            return prediction;
+
+        }
+
+        $(document).ready(function() {
+
+            // Function to append a new message to the chat container
+            function appendMessage(sender, message, isSender) {
+                
+                var messageClass = isSender ? 'sender' : 'receiver';
+
+                var messageHTML = '<div class="message ' + messageClass + '">' +
+                                    '<div class="sender-name">' + sender + '</div>' +
+                                    '<div class="message-text">' + message + '</div>' +
+                                  '</div>';
+
+                $('.chat-container').append(messageHTML);
+
+            }
+
+
+
+
+            // Send button click event handler
+            $('button').click(function() {
+                
+                //get chat 
+                var messageInput = $('textarea').val();
+
+                if (messageInput !== '') {
+
+                    //display message sent
+                    appendMessage('You', messageInput, true);
+
+                    //send api request 
+                    setTimeout(function() {
+
+                        responseMessage = api_request(messageInput);
+                        
+                        //display response
+                        appendMessage('Yoda', responseMessage, false);
+                    }, 500);
+
+                    //reset input value
+                    $('textarea').val('');
+                }
+
+            });
+
+        });
+
+    </script>
+
+</head>
+
+<body>
+    <div class="container">
+        <h1>YodaGPT</h1>
+        <div class="chat-container">
+            <!-- Display conversation history -->
+            <div class="message receiver">
+                <div class="sender-name">Yoda</div>
+                <div class="message-text">Greetings young one. How may I assist you?</div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <textarea placeholder="Type your message..." rows="2" style="resize: none;"></textarea>
+            <button>Send</button>
+        </div>
+    </div>
+</body>
+</html>
