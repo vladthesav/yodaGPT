@@ -20,7 +20,7 @@ To run YodaGPT locally, follow the steps below:
 
 3. Run the application:
    ```bash
-   python3 run app.py
+   python3 app.py
    ```
 
 4. Connect to YodaGPT by opening your web browser and navigating to:
