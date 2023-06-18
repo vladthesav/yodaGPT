@@ -5,10 +5,14 @@ import os
 #get api key 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+#context for chatGPT 
+CONTEXT = "You are a yoda AI assistant" 
+
 class Yoda():
-    def __init__(self):
+    """yoda chat object"""
+    def __init__(self, context = CONTEXT):
         #tell chatbot what to do 
-        self.context = "You are a yoda AI assistant" 
+        self.context = CONTEXT
 
         #keep track of convo
         self.convo = [{"role": "system", "content": self.context }]
@@ -17,6 +21,7 @@ class Yoda():
         self.model="gpt-3.5-turbo"
 
     def ask_yoda(self, question): 
+
         #append input to messages
         self.convo.append({"role":"user", "content":question})
 
