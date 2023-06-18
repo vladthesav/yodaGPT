@@ -53,4 +53,4 @@ if __name__ == '__main__':
     debug = False if "container" in env_vars else True
     print("debug mode = ",debug)
 
-    app.run(debug=debug, port=2000,host='0.0.0.0')
+    app.run(debug=debug, port=3500,host='0.0.0.0')

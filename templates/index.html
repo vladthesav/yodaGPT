@@ -61,6 +61,7 @@
 
         .message-text {
             margin-top: 5px;
+            word-wrap: break-word;
         }
 
         .input-container {
@@ -81,7 +82,8 @@
 
         .input-container textarea {
             width: 80%;
-            padding: 8px;
+            padding-left: 8px;
+            padding-right: 8px;
             border: 1px solid #ccc;
             border-radius: 5px;
             flex-grow: 1;
@@ -218,7 +220,6 @@
                     //send api request 
                     setTimeout(function() {
 
-                        
                         responseMessage = api_request(messageInput);
                         
                         //display response
